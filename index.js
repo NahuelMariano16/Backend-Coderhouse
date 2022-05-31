@@ -1,60 +1,77 @@
-class Usuario {
-    constructor(nombre, apellido){
-        this.nombre = nombre
-        this.apellido = apellido
-        this.libros = []
-        this.mascotas = []
-    }
-    
+const fs= require('fs');
+const { json } = require('stream/consumers');
 
-    getFullName(){
-        let fullName = `${this.nombre} ${this.apellido}`
-        console.log(fullName)
+class Contenedor {
+    constructor(archivo) {
+        this.archivo = archivo;  
     }
-    addMascota(mascota){
-        this.mascotas.push(mascota)
-        console.log(this.mascotas)
+
+    async save(obj){
+        try{
+            let ids = Array.from(JSON.parse(await fs.promises.readFile('./ids.txt', 'utf-8')));
+            ids.push(ids[ids.length-1]+1);
+            fs.promises.writeFile('ids.txt', JSON.stringify(ids));
+            let objArr = JSON.parse(await fs.promises.readFile(this.archivo, 'utf-8'));
+            objArr.push(obj);
+            await fs.promises.writeFile(this.archivo, JSON.stringify(objArr));
+            console.log(`Objeto guardado correctamente en ${this.archivo}`)
+        }
+        catch(err){
+            if(err){
+                obj.id = 1;
+                await fs.promises.writeFile('./ids.txt', JSON.stringify([1]));
+                await fs.promises.writeFile(this.archivo, JSON.stringify([obj]));
+                console.log(`Objeto guardado correctamente en ${this.archivo}`)
+            }else{
+                console.log(`Hubo un error: ${err}`);
+            }
+        }
     }
-    countMascotas(){
-        console.log(this.mascotas.length)
+    async getById(){
+        try{
+            const data = JSON.parse(await fs.promises.readFile(this.archivo, 'utf-8'));
+            const object = data.find(object => object.id === id);
+            return (object ? console.log(object) : console.log(`No se encontro el objeto con el id : ${id}`));
+        }
+        catch(err){
+            console.log(`Hubo un error: ${err}`)
+        }
     }
-    addBook(nombre, autor){
-        this.libros.push({Nombre: nombre, Autor:autor})
-        console.log(this.libros)
+    async getAll(){
+        try{
+            const data = JSON.parse(await fs.promises.readFile(this.archivo, 'utf-8'));
+            return (data ? console.log(data) : 'El archivo tiene un problema o se encuentra vacio')
+        }
+        catch(err){
+            console.log(`Hubo un error: ${err}`)
+        }
     }
-    getBookNames(){
-       let nombres = this.libros.map(function(nombre){
-        return nombre.Nombre
-       })
-       console.log(nombres)
+    async deleteById(){
+        try{
+            const data = JSON.parse(await fs.promises.readFile(this.archivo, 'utf-8'));
+            const arr = data.filter(obj => obj.id !== id);
+            await fs.promises.writeFile(this.archivo, JSON.stringify(arr));
+            console.log(`El objeto con el ID ${id} ha sido eliminado`)
+        }
+        catch(err){
+            console.log(`Hubo un error : ${err}`)
+        }
+    }
+    async deleteAll(){
+        try{
+            await fs.promises.writeFile(this.archivo, [])
+            console.log('Objetos Eliminados')
+        }
+        catch(err){
+            console.log(`Hubo un error: ${err}`)
+        }
     }
 }
 
-let Nahuel = new Usuario("Nahuel", "de los Santos")
-Nahuel.getFullName()
-Nahuel.addMascota("Perro")
-Nahuel.addMascota("Gato")
-Nahuel.addMascota("Gata")
-Nahuel.countMascotas()
-Nahuel.addBook("Harry Potter", "J.K Rowling")
-Nahuel.addBook("Los Juegos del Hambre", "Suzanne C")
-Nahuel.getBookNames()
+const archivo = new Contenedor('./productos.txt')
 
-// //Ejercicio 1
-// function mostrarLista (listaDeDatos){
-//     if(listaDeDatos == '' || listaDeDatos == null){
-//         console.log('Lista Vacia')
-//     }else{
-//         return listaDeDatos
-//     }
-// }
-// console.log(mostrarLista([1,2,3]))
-
-// //Ejercicio 3
-// function crearMultiplicador(n){
-//     return function(m){
-//         return n*m
-//     }
-// }
-
-// crearMultiplicador(3)(4)
+// archivo.save(productos[0]);
+// archivo.getById(2)
+// archivo.getAll()
+// archivo.deleteById(3)
+// archivo.deleteAll();
